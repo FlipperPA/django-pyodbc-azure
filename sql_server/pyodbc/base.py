@@ -7,7 +7,7 @@ import time
 
 from django.core.exceptions import ImproperlyConfigured
 from django import VERSION
-if VERSION[:3] < (1,11,0) or VERSION[:2] >= (1,12):
+if VERSION[:3] < (2,0,0) or VERSION[:2] >= (2,1):
     raise ImproperlyConfigured("Django %d.%d.%d is not supported." % VERSION[:3])
 
 try:
@@ -64,6 +64,7 @@ def encode_value(v):
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
+    display_name = 'Microsoft SQL Server (django-pyodbc-azure)'
     # This dictionary maps Field objects to their associated MS SQL column
     # types, as strings. Column-type strings can contain format strings; they'll
     # be interpolated against the values of Field.__dict__ before being output.
