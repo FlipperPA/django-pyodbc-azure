@@ -50,9 +50,9 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
     sql_rename_column = "EXEC sp_rename '%(table)s.%(old_column)s', %(new_column)s, 'COLUMN'"
     sql_rename_table = "EXEC sp_rename %(old_table)s, %(new_table)s"
 
-    def _alter_column_type_sql(self, table, old_field, new_field, new_type):
+    def _alter_column_type_sql(self, model, old_field, new_field, new_type):
         new_type = self._set_field_new_type_null_status(old_field, new_type)
-        return super(DatabaseSchemaEditor, self)._alter_column_type_sql(table, old_field, new_field, new_type)
+        return super(DatabaseSchemaEditor, self)._alter_column_type_sql(model, old_field, new_field, new_type)
 
     def _alter_field(self, model, old_field, new_field, old_type, new_type,
                      old_db_params, new_db_params, strict=False):
@@ -135,7 +135,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         # Type change?
         if old_type != new_type:
             fragment, other_actions = self._alter_column_type_sql(
-                model._meta.db_table, old_field, new_field, new_type
+                model, old_field, new_field, new_type
             )
             actions.append(fragment)
             post_actions.extend(other_actions)
@@ -311,7 +311,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             self.execute(
                 self.sql_create_pk % {
                     "table": self.quote_name(model._meta.db_table),
-                    "name": self.quote_name(self._create_index_name(model, [new_field.column], suffix="_pk")),
+                    "name": self.quote_name(self._create_index_name(model._meta.db_table, [new_field.column], suffix="_pk")),
                     "columns": self.quote_name(new_field.column),
                 }
             )
@@ -322,7 +322,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             rel_db_params = new_rel.field.db_parameters(connection=self.connection)
             rel_type = rel_db_params['type']
             fragment, other_actions = self._alter_column_type_sql(
-                new_rel.related_model._meta.db_table, old_rel.field, new_rel.field, rel_type
+                new_rel.related_model, old_rel.field, new_rel.field, rel_type
             )
             self.execute(
                 self.sql_alter_column % {
@@ -348,7 +348,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             self.execute(
                 self.sql_create_check % {
                     "table": self.quote_name(model._meta.db_table),
-                    "name": self.quote_name(self._create_index_name(model, [new_field.column], suffix="_check")),
+                    "name": self.quote_name(self._create_index_name(model._meta.db_table, [new_field.column], suffix="_check")),
                     "column": self.quote_name(new_field.column),
                     "check": new_db_params['check'],
                 }
@@ -500,7 +500,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             if db_params['check']:
                 # SQL Server requires a name for the check constraint
                 definition += self._sql_check_constraint % {
-                    "name": self._create_index_name(model, [field.column], suffix="_check"),
+                    "name": self._create_index_name(model._meta.db_table, [field.column], suffix="_check"),
                     "check": db_params['check']
                 }
             # Autoincrement SQL (for backends with inline variant)
