@@ -399,7 +399,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor.execute("SELECT CAST(SERVERPROPERTY('ProductVersion') AS varchar)")
             ver = cursor.fetchone()[0]
             ver = int(ver.split('.')[0])
-            if not ver in self._sql_server_versions:
+            if ver not in self._sql_server_versions:
                 raise NotImplementedError('SQL Server v%d is not supported.' % ver)
             return self._sql_server_versions[ver]
 
@@ -470,14 +470,14 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
     def disable_constraint_checking(self):
         # Azure SQL Database doesn't support sp_msforeachtable
-        #cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT ALL"')
+        # cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT ALL"')
         if not self.needs_rollback:
             self._execute_foreach('ALTER TABLE %s NOCHECK CONSTRAINT ALL')
         return not self.needs_rollback
 
     def enable_constraint_checking(self):
         # Azure SQL Database doesn't support sp_msforeachtable
-        #cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL"')
+        # cursor.execute('EXEC sp_msforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL"')
         if not self.needs_rollback:
             self.check_constraints()
 
@@ -505,6 +505,9 @@ class CursorWrapper(object):
             # FreeTDS (and other ODBC drivers?) doesn't support Unicode
             # yet, so we need to encode the SQL clause itself in utf-8
             sql = smart_str(sql, self.driver_charset)
+
+        print(sql)
+        print(params)
 
         # pyodbc uses '?' instead of '%s' as parameter placeholder.
         if params is not None:
