@@ -7,7 +7,7 @@ import time
 
 from django.core.exceptions import ImproperlyConfigured
 from django import VERSION
-if VERSION[:3] < (2,0,0) or VERSION[:2] >= (2,1):
+if VERSION[:3] < (2, 0, 0) or VERSION[:2] >= (2, 1):
     raise ImproperlyConfigured("Django %d.%d.%d is not supported." % VERSION[:3])
 
 try:
@@ -24,7 +24,6 @@ from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.validation import BaseDatabaseValidation
 from django.utils.encoding import smart_str
 from django.utils.functional import cached_property
-from django.utils.six import binary_type, text_type
 from django.utils.timezone import utc
 
 if hasattr(settings, 'DATABASE_CONNECTION_POOLING'):
@@ -54,6 +53,7 @@ def encode_connection_string(fields):
         for k, v in fields.items()
     )
 
+
 def encode_value(v):
     """If the value contains a semicolon, or starts with a left curly brace,
     then enclose it in curly braces and escape all right curly braces.
@@ -61,6 +61,7 @@ def encode_value(v):
     if ';' in v or v.strip(' ').startswith('{'):
         return '{%s}' % (v.replace('}', '}}'),)
     return v
+
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
@@ -70,32 +71,32 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # be interpolated against the values of Field.__dict__ before being output.
     # If a column type is set to None, it won't be included in the output.
     data_types = {
-        'AutoField':         'int IDENTITY (1, 1)',
-        'BigAutoField':      'bigint IDENTITY (1, 1)',
-        'BigIntegerField':   'bigint',
-        'BinaryField':       'varbinary(max)',
-        'BooleanField':      'bit',
-        'CharField':         'nvarchar(%(max_length)s)',
+        'AutoField': 'int IDENTITY (1, 1)',
+        'BigAutoField': 'bigint IDENTITY (1, 1)',
+        'BigIntegerField': 'bigint',
+        'BinaryField': 'varbinary(max)',
+        'BooleanField': 'bit',
+        'CharField': 'nvarchar(%(max_length)s)',
         'CommaSeparatedIntegerField': 'nvarchar(%(max_length)s)',
-        'DateField':         'date',
-        'DateTimeField':     'datetime2',
-        'DecimalField':      'numeric(%(max_digits)s, %(decimal_places)s)',
-        'DurationField':     'bigint',
-        'FileField':         'nvarchar(%(max_length)s)',
-        'FilePathField':     'nvarchar(%(max_length)s)',
-        'FloatField':        'double precision',
-        'IntegerField':      'int',
-        'IPAddressField':    'nvarchar(15)',
+        'DateField': 'date',
+        'DateTimeField': 'datetime2',
+        'DecimalField': 'numeric(%(max_digits)s, %(decimal_places)s)',
+        'DurationField': 'bigint',
+        'FileField': 'nvarchar(%(max_length)s)',
+        'FilePathField': 'nvarchar(%(max_length)s)',
+        'FloatField': 'double precision',
+        'IntegerField': 'int',
+        'IPAddressField': 'nvarchar(15)',
         'GenericIPAddressField': 'nvarchar(39)',
-        'NullBooleanField':  'bit',
-        'OneToOneField':     'int',
+        'NullBooleanField': 'bit',
+        'OneToOneField': 'int',
         'PositiveIntegerField': 'int',
         'PositiveSmallIntegerField': 'smallint',
-        'SlugField':         'nvarchar(%(max_length)s)',
+        'SlugField': 'nvarchar(%(max_length)s)',
         'SmallIntegerField': 'smallint',
-        'TextField':         'nvarchar(max)',
-        'TimeField':         'time',
-        'UUIDField':         'char(32)',
+        'TextField': 'nvarchar(max)',
+        'TimeField': 'time',
+        'UUIDField': 'char(32)',
     }
     data_type_check_constraints = {
         'PositiveIntegerField': '[%(column)s] >= 0',
@@ -370,7 +371,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         # http://blogs.msdn.com/b/sqlnativeclient/archive/2008/02/27/microsoft-sql-server-native-client-and-microsoft-sql-server-2008-native-client.aspx
         try:
             val = cursor.execute('SELECT SYSDATETIME()').fetchone()[0]
-            if isinstance(val, text_type):
+            if isinstance(val, str):
                 # the driver doesn't support the modern datetime types
                 self.use_legacy_datetime = True
         except:
@@ -500,7 +501,7 @@ class CursorWrapper(object):
             self.cursor.close()
 
     def format_sql(self, sql, params):
-        if self.driver_charset and isinstance(sql, text_type):
+        if self.driver_charset and isinstance(sql, str):
             # FreeTDS (and other ODBC drivers?) doesn't support Unicode
             # yet, so we need to encode the SQL clause itself in utf-8
             sql = smart_str(sql, self.driver_charset)
@@ -515,7 +516,7 @@ class CursorWrapper(object):
         fp = []
         if params is not None:
             for p in params:
-                if isinstance(p, text_type):
+                if isinstance(p, str):
                     if self.driver_charset:
                         # FreeTDS (and other ODBC drivers?) doesn't support Unicode
                         # yet, so we need to encode parameters in utf-8
@@ -523,7 +524,7 @@ class CursorWrapper(object):
                     else:
                         fp.append(p)
 
-                elif isinstance(p, binary_type):
+                elif isinstance(p, (bytes, bytearray, memoryview)):
                     fp.append(p)
 
                 elif isinstance(p, type(True)):
@@ -573,7 +574,7 @@ class CursorWrapper(object):
                 f = row[i]
                 # FreeTDS (and other ODBC drivers?) doesn't support Unicode
                 # yet, so we need to decode utf-8 data coming from the DB
-                if isinstance(f, binary_type):
+                if isinstance(f, (bytes, bytearray, memoryview)):
                     row[i] = f.decode(self.driver_charset)
         return row
 
