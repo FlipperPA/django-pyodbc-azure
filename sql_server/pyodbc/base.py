@@ -5,7 +5,21 @@ import os
 import re
 import time
 
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.db.backends.base.base import BaseDatabaseWrapper
+from django.db.backends.base.validation import BaseDatabaseValidation
+from django.utils.encoding import smart_str
+from django.utils.functional import cached_property
+
+from .client import DatabaseClient
+from .creation import DatabaseCreation
+from .features import DatabaseFeatures
+from .introspection import DatabaseIntrospection
+from .operations import DatabaseOperations
+from .schema import DatabaseSchemaEditor
+
+
 from django import VERSION
 if VERSION[:3] < (2, 0, 0) or VERSION[:2] >= (2, 1):
     raise ImproperlyConfigured("Django %d.%d.%d is not supported." % VERSION[:3])
@@ -19,23 +33,9 @@ pyodbc_ver = tuple(map(int, Database.version.split('.')[:2]))
 if pyodbc_ver < (3, 0):
     raise ImproperlyConfigured("pyodbc 3.0 or newer is required; you have %s" % Database.version)
 
-from django.conf import settings
-from django.db.backends.base.base import BaseDatabaseWrapper
-from django.db.backends.base.validation import BaseDatabaseValidation
-from django.utils.encoding import smart_str
-from django.utils.functional import cached_property
-from django.utils.timezone import utc
-
 if hasattr(settings, 'DATABASE_CONNECTION_POOLING'):
     if not settings.DATABASE_CONNECTION_POOLING:
         Database.pooling = False
-
-from .client import DatabaseClient
-from .creation import DatabaseCreation
-from .features import DatabaseFeatures
-from .introspection import DatabaseIntrospection
-from .operations import DatabaseOperations
-from .schema import DatabaseSchemaEditor
 
 EDITION_AZURE_SQL_DB = 5
 
@@ -65,7 +65,7 @@ def encode_value(v):
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
-    display_name = 'Microsoft SQL Server (django-pyodbc-azure)'
+    display_name = 'Microsoft SQL Server'
     # This dictionary maps Field objects to their associated MS SQL column
     # types, as strings. Column-type strings can contain format strings; they'll
     # be interpolated against the values of Field.__dict__ before being output.
@@ -487,6 +487,7 @@ class CursorWrapper(object):
     A wrapper around the pyodbc's cursor that takes in account a) some pyodbc
     DB-API 2.0 implementation and b) some common ODBC driver particularities.
     """
+
     def __init__(self, cursor, connection):
         self.active = True
         self.cursor = cursor
@@ -501,17 +502,22 @@ class CursorWrapper(object):
             self.cursor.close()
 
     def format_sql(self, sql, params):
+        if not isinstance(sql, str):
+            # Create a string of the SQL components
+            sql = sql.template % sql.parts
+
         if self.driver_charset and isinstance(sql, str):
             # FreeTDS (and other ODBC drivers?) doesn't support Unicode
             # yet, so we need to encode the SQL clause itself in utf-8
             sql = smart_str(sql, self.driver_charset)
 
-        print(sql)
-        print(params)
+        # If there are no parameters, just return the SQL Statement
+        if params is None:
+            return sql
 
-        # pyodbc uses '?' instead of '%s' as parameter placeholder.
-        if params is not None:
-            sql = sql % tuple('?' * len(params))
+        # Repalce %s placeholder with ? for pyodbc
+        FORMAT_QMARK_REGEX = re.compile(r'(?<!%)%s')
+        sql = FORMAT_QMARK_REGEX.sub('?', sql).replace('%%', '%')
 
         return sql
 
