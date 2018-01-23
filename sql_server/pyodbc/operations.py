@@ -9,7 +9,6 @@ from django.db.models.expressions import Exists
 from django.db.models.functions import Greatest, Least
 from django.utils import timezone
 from django.utils.encoding import force_text
-from django.utils.six import string_types
 
 import pytz
 
@@ -118,7 +117,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         if value is not None:
             # WDAC and old FreeTDS receive a date value as a string
             # http://blogs.msdn.com/b/sqlnativeclient/archive/2008/02/27/microsoft-sql-server-native-client-and-microsoft-sql-server-2008-native-client.aspx
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 self._warn_legacy_driver('date')
                 value = datetime.date(*map(lambda x: int(x), value.split('-')))
             elif self.connection.use_legacy_datetime:
@@ -130,7 +129,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         if value is not None:
             # WDAC and old FreeTDS receive a datetime2 value as a string
             # http://blogs.msdn.com/b/sqlnativeclient/archive/2008/02/27/microsoft-sql-server-native-client-and-microsoft-sql-server-2008-native-client.aspx
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 self._warn_legacy_driver('datetime2')
                 value = datetime.datetime.strptime(value[:26], '%Y-%m-%d %H:%M:%S.%f')
             if settings.USE_TZ:
@@ -146,7 +145,7 @@ class DatabaseOperations(BaseDatabaseOperations):
         if value is not None:
             # WDAC and old FreeTDS receive a time value as a string
             # http://blogs.msdn.com/b/sqlnativeclient/archive/2008/02/27/microsoft-sql-server-native-client-and-microsoft-sql-server-2008-native-client.aspx
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 self._warn_legacy_driver('time')
                 value = datetime.time(*map(lambda x: int(x), value[:15].replace('.', ':').split(':')))
             elif self.connection.use_legacy_datetime:
@@ -494,7 +493,7 @@ class DatabaseOperations(BaseDatabaseOperations):
             return None
         if self.connection.use_legacy_datetime:
             # SQL Server's datetime type doesn't support microseconds
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 value = datetime.datetime(*(time.strptime(value, '%H:%M:%S')[:6]))
             else:
                 value = datetime.datetime(1900, 1, 1, value.hour, value.minute, value.second)
