@@ -5,10 +5,8 @@ from django.db.backends.base.schema import (
     BaseDatabaseSchemaEditor, logger, _related_non_m2m_objects,
 )
 from django.db.models.fields import AutoField, BigAutoField
-from django.db.models.fields.related import ManyToManyField
 from django.db.transaction import TransactionManagementError
-from django.utils import six
-from django.utils.text import force_text
+from django.utils.encoding import force_text
 
 
 class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
@@ -630,9 +628,9 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                 return "'%s'" % value
         elif isinstance(value, (datetime.date, datetime.time)):
             return "'%s'" % value
-        elif isinstance(value, six.string_types):
+        elif isinstance(value, str):
             return "'%s'" % value.replace("'", "''")
-        elif isinstance(value, six.buffer_types):
+        elif isinstance(value, (bytes, bytearray, memoryview)):
             return "0x%s" % force_text(binascii.hexlify(value))
         elif isinstance(value, bool):
             return "1" if value else "0"
