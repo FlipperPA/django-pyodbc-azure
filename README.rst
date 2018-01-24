@@ -17,7 +17,7 @@ Microsoft SQL Server and Azure SQL Database.
 Features
 --------
 
--  Supports Django 1.11.0
+-  Supports Django 2.0+
 -  Supports Microsoft SQL Server 2005, 2008/2008R2, 2012, 2014, 2016 and
    Azure SQL Database
 -  Supports LIMIT+OFFSET and offset w/o LIMIT emulation.
@@ -31,7 +31,7 @@ Features
 Dependencies
 ------------
 
--  Django 1.11.0
+-  Django 2.0+
 -  pyodbc 3.0 or newer
 
 Installation
@@ -239,12 +239,12 @@ The following features are currently not supported:
 Notice
 ------
 
-This version of *django-pyodbc-azure* only supports Django 1.11.
+This version of *django-pyodbc-azure* only supports Django 2.0.
 If you want to use it on older versions of Django,
-specify an appropriate version number (1.10.x.x for Django 1.10)
+specify an appropriate version number (1.11.x.x for Django 1.11)
 at installation like this: ::
 
-    pip install "django-pyodbc-azure<1.11"
+    pip install "django-pyodbc-azure<2"
 
 License
 -------
@@ -255,8 +255,9 @@ Credits
 -------
 
 -  `Ramiro Morales <https://people.djangoproject.com/ramiro/>`__
--  `Filip Wasilewski <http://code.djangoproject.com/ticket/5246>`__
+-  `Filip Wasilewski <https://code.djangoproject.com/ticket/5246>`__
 -  `Wei guangjing <https://people.djangoproject.com/vcc/>`__
--  `mamcx <http://code.djangoproject.com/ticket/5062>`__
--  `Alex Vidal <http://github.com/avidal/>`__
--  `Michiya Takahashi <http://github.com/michiya/>`__
+-  `mamcx <https://code.djangoproject.com/ticket/5062>`__
+-  `Alex Vidal <https://github.com/avidal/>`__
+-  `Michiya Takahashi <https://github.com/michiya/>`__
+-  `Timothy Allen <https://github.com/FlipperPA/>`__
