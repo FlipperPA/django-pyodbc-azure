@@ -9,7 +9,6 @@ from django.db.backends.ddl_references import (
 )
 from django.db.models import Index
 from django.db.models.fields import AutoField, BigAutoField
-from django.db.models.fields.related import ManyToManyField
 from django.db.transaction import TransactionManagementError
 from django.utils.encoding import force_text
 
@@ -588,7 +587,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
             self._sql_select_foreign_key_constraints % {
                 "table": self.quote_value(model._meta.db_table),
             },
-            has_result = True
+            has_result=True
         )
         if result:
             for table, constraint in result:

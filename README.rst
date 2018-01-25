@@ -243,8 +243,9 @@ Credits
 -------
 
 -  `Ramiro Morales <https://people.djangoproject.com/ramiro/>`__
--  `Filip Wasilewski <http://code.djangoproject.com/ticket/5246>`__
+-  `Filip Wasilewski <https://code.djangoproject.com/ticket/5246>`__
 -  `Wei guangjing <https://people.djangoproject.com/vcc/>`__
--  `mamcx <http://code.djangoproject.com/ticket/5062>`__
--  `Alex Vidal <http://github.com/avidal/>`__
--  `Michiya Takahashi <http://github.com/michiya/>`__
+-  `mamcx <https://code.djangoproject.com/ticket/5062>`__
+-  `Alex Vidal <https://github.com/avidal/>`__
+-  `Michiya Takahashi <https://github.com/michiya/>`__
+-  `Timothy Allen <https://github.com/FlipperPA/>`__

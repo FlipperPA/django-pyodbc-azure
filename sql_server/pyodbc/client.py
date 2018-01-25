@@ -2,6 +2,7 @@ import re
 
 from django.db.backends.base.client import BaseDatabaseClient
 
+
 class DatabaseClient(BaseDatabaseClient):
     executable_name = 'sqlcmd'
 
@@ -19,7 +20,6 @@ class DatabaseClient(BaseDatabaseClient):
         if self.executable_name == 'sqlcmd':
             db = options.get('db', settings_dict['NAME'])
             server = options.get('host', settings_dict['HOST'])
-            port = options.get('port', settings_dict['PORT'])
             defaults_file = options.get('read_default_file')
 
             args = [self.executable_name]
@@ -30,7 +30,7 @@ class DatabaseClient(BaseDatabaseClient):
                 if password:
                     args += ["-P", password]
             else:
-                args += ["-E"] # Try trusted connection instead
+                args += ["-E"]  # Try trusted connection instead
             if db:
                 args += ["-d", db]
             if defaults_file:

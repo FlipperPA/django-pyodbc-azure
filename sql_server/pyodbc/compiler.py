@@ -6,11 +6,12 @@ from django.db.models.expressions import Exists, OrderBy, Ref, Value
 from django.db.models.functions import ConcatPair, Greatest, Least, Length, StrIndex, Substr
 from django.db.models.sql import compiler
 from django.db.transaction import TransactionManagementError
-from django.db.utils import DatabaseError, NotSupportedError
+from django.db.utils import NotSupportedError
 
 
 def _as_sql_agv(self, compiler, connection):
     return self.as_sql(compiler, connection, template='%(function)s(CONVERT(float, %(field)s))')
+
 
 def _as_sql_concatpair(self, compiler, connection):
     if connection.sql_server_version < 2012:
@@ -19,25 +20,30 @@ def _as_sql_concatpair(self, compiler, connection):
     else:
         return self.as_sql(compiler, connection)
 
+
 def _as_sql_count(self, compiler, connection):
     return self.as_sql(compiler, connection, function='COUNT_BIG')
+
 
 def _as_sql_greatest(self, compiler, connection):
     # SQL Server does not provide GREATEST function,
     # so we emulate it with a table value constructor
     # https://msdn.microsoft.com/en-us/library/dd776382.aspx
-    template='(SELECT MAX(value) FROM (VALUES (%(expressions)s)) AS _%(function)s(value))'
+    template = '(SELECT MAX(value) FROM (VALUES (%(expressions)s)) AS _%(function)s(value))'
     return self.as_sql(compiler, connection, arg_joiner='), (', template=template)
+
 
 def _as_sql_least(self, compiler, connection):
     # SQL Server does not provide LEAST function,
     # so we emulate it with a table value constructor
     # https://msdn.microsoft.com/en-us/library/dd776382.aspx
-    template='(SELECT MIN(value) FROM (VALUES (%(expressions)s)) AS _%(function)s(value))'
+    template = '(SELECT MIN(value) FROM (VALUES (%(expressions)s)) AS _%(function)s(value))'
     return self.as_sql(compiler, connection, arg_joiner='), (', template=template)
+
 
 def _as_sql_length(self, compiler, connection):
     return self.as_sql(compiler, connection, function='LEN')
+
 
 def _as_sql_exists(self, compiler, connection, template=None, **extra_context):
     # MS SQL doesn't allow EXISTS() in the SELECT list, so wrap it with a
@@ -47,6 +53,7 @@ def _as_sql_exists(self, compiler, connection, template=None, **extra_context):
     sql = 'CASE WHEN {} THEN 1 ELSE 0 END'.format(sql)
     return sql, params
 
+
 def _as_sql_order_by(self, compiler, connection):
     template = None
     if self.nulls_last:
@@ -55,11 +62,13 @@ def _as_sql_order_by(self, compiler, connection):
         template = 'CASE WHEN %(expression)s IS NULL THEN 0 ELSE 1 END, %(expression)s %(ordering)s'
     return self.as_sql(compiler, connection, template=template)
 
+
 def _as_sql_stddev(self, compiler, connection):
     function = 'STDEV'
     if self.function == 'STDDEV_POP':
         function = '%sP' % function
     return self.as_sql(compiler, connection, function=function)
+
 
 def _as_sql_strindex(self, compiler, connection):
     self.source_expressions.reverse()
@@ -67,10 +76,12 @@ def _as_sql_strindex(self, compiler, connection):
     self.source_expressions.reverse()
     return sql
 
+
 def _as_sql_substr(self, compiler, connection):
     if len(self.get_source_expressions()) < 3:
-        self.get_source_expressions().append(Value(2**31-1))
+        self.get_source_expressions().append(Value(2 ** 31 - 1))
     return self.as_sql(compiler, connection)
+
 
 def _as_sql_variance(self, compiler, connection):
     function = 'VAR'
@@ -119,14 +130,14 @@ class SQLCompiler(compiler.SQLCompiler):
                 having, h_params = self.compile(self.having) if self.having is not None else ("", [])
                 params = []
                 result = ['SELECT']
-    
+
                 if self.query.distinct:
                     result.append(self.connection.ops.distinct_sql(distinct_fields))
-    
+
                 # SQL Server requires the keword for limitting at the begenning
                 if do_limit and not do_offset:
                     result.append('TOP %d' % high_mark)
-    
+
                 out_cols = []
                 col_idx = 1
                 for _, (s_sql, s_params), alias in self.select + extra_select:
@@ -137,7 +148,7 @@ class SQLCompiler(compiler.SQLCompiler):
                         col_idx += 1
                     params.extend(s_params)
                     out_cols.append(s_sql)
-    
+
                 # SQL Server requires an order-by clause for offsetting
                 if do_offset:
                     meta = self.query.get_meta()
@@ -153,7 +164,7 @@ class SQLCompiler(compiler.SQLCompiler):
                                 src = next(iter(expr.get_source_expressions()))
                                 if isinstance(src, Ref):
                                     src = next(iter(src.get_source_expressions()))
-                                    o_sql, _  = src.as_sql(self, self.connection)
+                                    o_sql, _ = src.as_sql(self, self.connection)
                                     odir = 'DESC' if expr.descending else 'ASC'
                                     o_sql = '%s %s' % (o_sql, odir)
                                 ordering.append(o_sql)
@@ -163,9 +174,9 @@ class SQLCompiler(compiler.SQLCompiler):
                         out_cols.append('ROW_NUMBER() OVER (ORDER BY %s) AS [rn]' % offsetting_order_by)
                     elif not order_by:
                         order_by.append(((None, ('%s ASC' % offsetting_order_by, [], None))))
-    
+
                 result.append(', '.join(out_cols))
-    
+
                 if self.query.select_for_update and self.connection.features.has_select_for_update:
                     if self.connection.get_autocommit():
                         raise TransactionManagementError('select_for_update cannot be used outside of a transaction.')
@@ -203,7 +214,7 @@ class SQLCompiler(compiler.SQLCompiler):
                 if where:
                     result.append('WHERE %s' % where)
                     params.extend(w_params)
-    
+
                 grouping = []
                 for g_sql, g_params in group_by:
                     grouping.append(g_sql)
@@ -215,7 +226,7 @@ class SQLCompiler(compiler.SQLCompiler):
                     if not order_by:
                         order_by = self.connection.ops.force_no_ordering()
                     result.append('GROUP BY %s' % ', '.join(grouping))
-    
+
                 if having:
                     result.append('HAVING %s' % having)
                     params.extend(h_params)
@@ -236,9 +247,9 @@ class SQLCompiler(compiler.SQLCompiler):
                     result = ['SELECT * FROM (%s) AS X WHERE X.rn' % ' '.join(result)]
                     # Place WHERE condition on `rn` for the desired range.
                     if do_limit:
-                        result.append('BETWEEN %d AND %d' % (low_mark+1, high_mark))
+                        result.append('BETWEEN %d AND %d' % (low_mark + 1, high_mark))
                     else:
-                        result.append('>= %d' % (low_mark+1))
+                        result.append('>= %d' % (low_mark + 1))
                     if not self.query.subquery:
                         result.append('ORDER BY X.rn')
                 else:

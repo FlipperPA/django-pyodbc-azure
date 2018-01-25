@@ -5,34 +5,15 @@ import os
 import re
 import time
 
-from django.core.exceptions import ImproperlyConfigured
 from django import VERSION
-
-if VERSION[:3] < (2,0,1) or VERSION[:2] >= (2,1):
-    raise ImproperlyConfigured("Django %d.%d.%d is not supported." % VERSION[:3])
-
-try:
-    import pyodbc as Database
-except ImportError as e:
-    raise ImproperlyConfigured("Error loading pyodbc module: %s" % e)
-
-from django.utils.version import get_version_tuple
-
-pyodbc_ver = get_version_tuple(Database.version)
-if pyodbc_ver < (4,0):
-    raise ImproperlyConfigured("pyodbc 4.0 or newer is required; you have %s" % Database.version)
-
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import NotSupportedError
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.backends.base.validation import BaseDatabaseValidation
 from django.utils.encoding import smart_str
 from django.utils.functional import cached_property
-from django.utils.timezone import utc
-
-if hasattr(settings, 'DATABASE_CONNECTION_POOLING'):
-    if not settings.DATABASE_CONNECTION_POOLING:
-        Database.pooling = False
+from django.utils.version import get_version_tuple
 
 from .client import DatabaseClient
 from .creation import DatabaseCreation
@@ -41,11 +22,30 @@ from .introspection import DatabaseIntrospection
 from .operations import DatabaseOperations
 from .schema import DatabaseSchemaEditor
 
+if VERSION[:3] < (2, 0, 1) or VERSION[:2] >= (2, 1):
+    raise ImproperlyConfigured("Django %d.%d.%d is not supported." % VERSION[:3])
+
+try:
+    import pyodbc as Database
+except ImportError as e:
+    raise ImproperlyConfigured("Error loading pyodbc module: %s" % e)
+
+
+pyodbc_ver = get_version_tuple(Database.version)
+if pyodbc_ver < (4, 0):
+    raise ImproperlyConfigured("pyodbc 4.0 or newer is required; you have %s" % Database.version)
+
+
+if hasattr(settings, 'DATABASE_CONNECTION_POOLING'):
+    if not settings.DATABASE_CONNECTION_POOLING:
+        Database.pooling = False
+
 EDITION_AZURE_SQL_DB = 5
 
 
 def encode_connection_string(fields):
-    """Encode dictionary of keys and values as an ODBC connection String.
+    """
+    Encode dictionary of keys and values as an ODBC connection String.
 
     See [MS-ODBCSTR] document:
     https://msdn.microsoft.com/en-us/library/ee208909%28v=sql.105%29.aspx
@@ -57,6 +57,7 @@ def encode_connection_string(fields):
         for k, v in fields.items()
     )
 
+
 def encode_value(v):
     """If the value contains a semicolon, or starts with a left curly brace,
     then enclose it in curly braces and escape all right curly braces.
@@ -64,6 +65,7 @@ def encode_value(v):
     if ';' in v or v.strip(' ').startswith('{'):
         return '{%s}' % (v.replace('}', '}}'),)
     return v
+
 
 class DatabaseWrapper(BaseDatabaseWrapper):
     vendor = 'microsoft'
@@ -73,31 +75,32 @@ class DatabaseWrapper(BaseDatabaseWrapper):
     # be interpolated against the values of Field.__dict__ before being output.
     # If a column type is set to None, it won't be included in the output.
     data_types = {
-        'AutoField':         'int IDENTITY (1, 1)',
-        'BigAutoField':      'bigint IDENTITY (1, 1)',
-        'BigIntegerField':   'bigint',
-        'BinaryField':       'varbinary(max)',
-        'BooleanField':      'bit',
-        'CharField':         'nvarchar(%(max_length)s)',
-        'DateField':         'date',
-        'DateTimeField':     'datetime2',
-        'DecimalField':      'numeric(%(max_digits)s, %(decimal_places)s)',
-        'DurationField':     'bigint',
-        'FileField':         'nvarchar(%(max_length)s)',
-        'FilePathField':     'nvarchar(%(max_length)s)',
-        'FloatField':        'double precision',
-        'IntegerField':      'int',
-        'IPAddressField':    'nvarchar(15)',
+        'AutoField': 'int IDENTITY (1, 1)',
+        'BigAutoField': 'bigint IDENTITY (1, 1)',
+        'BigIntegerField': 'bigint',
+        'BinaryField': 'varbinary(max)',
+        'BooleanField': 'bit',
+        'CharField': 'nvarchar(%(max_length)s)',
+        'CommaSeparatedIntegerField': 'nvarchar(%(max_length)s)',
+        'DateField': 'date',
+        'DateTimeField': 'datetime2',
+        'DecimalField': 'numeric(%(max_digits)s, %(decimal_places)s)',
+        'DurationField': 'bigint',
+        'FileField': 'nvarchar(%(max_length)s)',
+        'FilePathField': 'nvarchar(%(max_length)s)',
+        'FloatField': 'double precision',
+        'IntegerField': 'int',
+        'IPAddressField': 'nvarchar(15)',
         'GenericIPAddressField': 'nvarchar(39)',
-        'NullBooleanField':  'bit',
-        'OneToOneField':     'int',
+        'NullBooleanField': 'bit',
+        'OneToOneField': 'int',
         'PositiveIntegerField': 'int',
         'PositiveSmallIntegerField': 'smallint',
-        'SlugField':         'nvarchar(%(max_length)s)',
+        'SlugField': 'nvarchar(%(max_length)s)',
         'SmallIntegerField': 'smallint',
-        'TextField':         'nvarchar(max)',
-        'TimeField':         'time',
-        'UUIDField':         'char(32)',
+        'TextField': 'nvarchar(max)',
+        'TimeField': 'time',
+        'UUIDField': 'char(32)',
     }
     data_type_check_constraints = {
         'PositiveIntegerField': '[%(column)s] >= 0',
@@ -260,7 +263,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
             if ms_drivers.match(driver):
                 if port:
-                    host = ','.join((host,port))
+                    host = ','.join((host, port))
                 cstr_parts['SERVER'] = host
             elif options.get('host_is_server', False):
                 if port:
@@ -376,7 +379,7 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             cursor.execute("SELECT CAST(SERVERPROPERTY('ProductVersion') AS varchar)")
             ver = cursor.fetchone()[0]
             ver = int(ver.split('.')[0])
-            if not ver in self._sql_server_versions:
+            if ver not in self._sql_server_versions:
                 raise NotSupportedError('SQL Server v%d is not supported.' % ver)
             return self._sql_server_versions[ver]
 
