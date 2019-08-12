@@ -1,0 +1,58 @@
+sudo: required
+language: python
+dist: xenial
+cache: pip
+
+branches:
+  only:
+    - master
+
+templates:
+  mssql: &mssql DATABASE_URL="mssql://SA:MyPassword42@localhost:1433/default?isolation_level=read committed&driver=ODBC Driver 17 for SQL Server" DATABASE_URL_OTHER="mssql://SA:MyPassword42@localhost:1433/other?isolation_level=read committed&driver=ODBC Driver 17 for SQL Server"
+
+env:
+  global:
+    - PYTHONPATH=$PYTHONPATH:$TRAVIS_BUILD_DIR/django
+
+matrix:
+  include:
+    - env: FLAKE8
+      python: "3.7"
+      install: pip install flake8==3.7.1
+      script: flake8
+
+    - python: "3.7"
+      services: docker
+      before_install:
+        - docker pull mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+        - docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=MyPassword42' -p 1433:1433 -d mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+        - curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+        - curl https://packages.microsoft.com/config/ubuntu/16.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+        - sudo apt-get update
+        - sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17 g++ unixodbc-dev
+      env:
+        - *mssql
+
+    - os: windows
+      language: sh
+      python: "3.7"
+      services: docker
+      before_install:
+        - docker pull christianacca/mssql-server-windows-express:1803
+        - docker run -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=MyPassword42' -p 1433:1433 -d christianacca/mssql-server-windows-express:1803
+        - wget https://download.microsoft.com/download/E/6/B/E6BFDC7A-5BCD-4C51-9912-635646DA801E/en-US/msodbcsql_17.3.1.1_x64.msi
+        - powershell "Start-Process msiexec.exe -Wait -ArgumentList '/I msodbcsql_17.3.1.1_x64.msi /qn /norestart IACCEPTMSODBCSQLLICENSETERMS=YES'"
+        - choco install python3 --version 3.7.2
+        - export PATH="/c/Python37:/c/Python37/Scripts:$PATH"
+        - pip install "django>=2.2,<2.3"
+      env:
+        - *mssql
+
+install:
+  - python -m pip install --upgrade pip wheel setuptools
+  - pip install -e .["tests"]
+  - git clone --branch=stable/2.2.x https://github.com/django/django.git --depth=1
+
+script:
+  - pip install -r django/tests/requirements/py3.txt
+  - ./test.sh

@@ -1,25 +1,14 @@
-django-pyodbc-azure
-===================
+django-mssql-backend
+====================
 
-.. image:: http://img.shields.io/pypi/v/django-pyodbc-azure.svg?style=flat
-    :target: https://pypi.python.org/pypi/django-pyodbc-azure
-
-.. image:: http://img.shields.io/pypi/l/django-pyodbc-azure.svg?style=flat
-    :target: http://opensource.org/licenses/BSD-3-Clause
-
-*django-pyodbc-azure* is a modern fork of
-`django-pyodbc <https://code.google.com/archive/p/django-pyodbc/>`__, a
-`Django <https://www.djangoproject.com/>`__ Microsoft SQL Server external
-DB backend that uses ODBC by employing the
-`pyodbc <https://github.com/mkleehammer/pyodbc>`__ library. It supports
-Microsoft SQL Server and Azure SQL Database.
+*django-mssql-backend* is a fork of
+`django-pyodbc-azure <https://pypi.org/project/django-pyodbc-azure/>`__
 
 Features
 --------
 
--  Supports Django 2.1
--  Supports Microsoft SQL Server 2008/2008R2, 2012, 2014, 2016, 2017 and
-   Azure SQL Database
+-  Supports Django 2.2
+-  Supports Microsoft SQL Server 2008/2008R2, 2012, 2014, 2016, 2017
 -  Passes most of the tests of the Django test suite
 -  Compatible with
    `Micosoft ODBC Driver for SQL Server <https://docs.microsoft.com/en-us/sql/connect/odbc/microsoft-odbc-driver-for-sql-server>`__,
@@ -29,7 +18,7 @@ Features
 Dependencies
 ------------
 
--  Django 2.1
+-  Django 2.2
 -  pyodbc 3.0 or newer
 
 Installation
@@ -37,9 +26,9 @@ Installation
 
 1. Install pyodbc and Django
 
-2. Install django-pyodbc-azure ::
+2. Install django-mssql-backend ::
 
-    pip install django-pyodbc-azure
+    pip install django-mssql-backend
 
 3. Now you can point the ``ENGINE`` setting in the settings file used by
    your Django application or project to the ``'sql_server.pyodbc'``
@@ -66,8 +55,7 @@ in DATABASES control the behavior of the backend:
 
 -  HOST
 
-   String. SQL Server instance in ``"server\instance"`` (on-premise) or
-   ``"server.database.windows.net"`` (Azure SQL Database) format.
+   String. SQL Server instance in ``"server\instance"`` format.
 
 -  PORT
 
@@ -76,8 +64,7 @@ in DATABASES control the behavior of the backend:
 
 -  USER
 
-   String. Database user name in ``"user"`` (on-premise) or
-   ``"user@server"`` (Azure SQL Database) format.
+   String. Database user name in ``"user"`` format.
    If not given then MS Integrated Security will be used.
 
 -  PASSWORD
@@ -217,7 +204,7 @@ Here is an example of the database settings:
         'default': {
             'ENGINE': 'sql_server.pyodbc',
             'NAME': 'mydb',
-            'USER': 'user@myserver',             
+            'USER': 'user@myserver',
             'PASSWORD': 'password',
             'HOST': 'myserver.database.windows.net',
             'PORT': '',
@@ -227,7 +214,7 @@ Here is an example of the database settings:
             },
         },
     }
-    
+
     # set this to False if you want to turn off pyodbc's connection pooling
     DATABASE_CONNECTION_POOLING = False
 
@@ -237,13 +224,3 @@ Limitations
 The following features are currently not supported:
 
 - Altering a model field from or to AutoField at migration
-
-Notice
-------
-
-This version of *django-pyodbc-azure* only supports Django 2.1.
-If you want to use it on older versions of Django,
-specify an appropriate version number (2.0.x.x for Django 2.0)
-at installation like this: ::
-
-    pip install "django-pyodbc-azure<2.1"
